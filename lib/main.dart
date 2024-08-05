@@ -2,14 +2,16 @@
 
 import 'dart:async';
 import 'package:elderacare/controllers/paramete_controller.dart';
+import 'package:elderacare/features/home/screens/landing.dart';
+import 'package:elderacare/features/scan/views/scan_screen.dart';
 import 'package:elderacare/screens/home.dart';
+import 'package:elderacare/screens/scan_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
 
 import 'screens/bluetooth_off_screen.dart';
-import 'screens/scan_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +25,7 @@ void main() async {
   final macAddress = prefs.getString('mac_address');
 
   runApp(FlutterBlueApp(
-      initialScreen: macAddress != null ? ParameterScreen() : ScanScreen()));
+      initialScreen: macAddress != null ? Dashboard() : ScanScreen()));
 }
 
 class FlutterBlueApp extends StatelessWidget {
@@ -35,6 +37,7 @@ class FlutterBlueApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Flutter Blue',
       color: Colors.lightBlue,
       home: initialScreen,

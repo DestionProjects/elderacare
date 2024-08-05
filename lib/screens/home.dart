@@ -1,5 +1,6 @@
 // screens/parameter_screen.dart
 import 'package:elderacare/controllers/paramete_controller.dart';
+import 'package:elderacare/features/scan/views/scan_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../screens/scan_screen.dart'; // Import ScanScreen
@@ -12,7 +13,8 @@ class ParameterScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Parameter Data'),
+        title: Text('Home Page'),
+        leading: Container(),
         actions: [
           IconButton(
             icon: Icon(Icons.bluetooth_searching), // Icon for scanning

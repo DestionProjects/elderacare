@@ -17,7 +17,7 @@ class ParameterService {
       String? macAddress = prefs.getString('mac_address');
 
       if (macAddress == null) {
-        print('MAC Address not found');
+        print('MAC Address not found---------');
         return null;
       }
 

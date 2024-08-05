@@ -1,8 +1,8 @@
 // services/measurement_service.dart
 import 'dart:async';
+import 'package:elderacare/features/measurements/apis/measures_api.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'api_service.dart';
 
 typedef OnMeasurementUpdate = void Function(Map<String, dynamic>);
 
@@ -10,7 +10,7 @@ class MeasurementService {
   final BluetoothCharacteristic txCharacteristic;
   final BluetoothCharacteristic rxCharacteristic;
   final OnMeasurementUpdate onMeasurementUpdate;
-  final ApiService _apiService = ApiService();
+  final MeasureApiService _apiService = MeasureApiService();
   int validMeasurementCount = 0;
   static const int thresholdCount =
       3; // Number of consecutive valid readings before sending to API
@@ -108,7 +108,7 @@ class MeasurementService {
         if (measurementValue > 0) {
           print("Body Temperature: $measurementValue");
           _sendToApi(macAddress, "bodyTemp", measurementValue);
-          onMeasurementUpdate({'bodyTemperature': measurementValue});
+          onMeasurementUpdate({'bodyTemp': measurementValue});
         }
         break;
       default:

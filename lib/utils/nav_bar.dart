@@ -1,5 +1,6 @@
+// ignore_for_file: prefer_const_literals_to_create_immutables
+
 import 'package:elderacare/features/scan/views/scan_screen.dart';
-import 'package:elderacare/screens/scan_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:iconly/iconly.dart';
 
@@ -14,13 +15,13 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
   void _onItemTapped(int index) {
     if (index == 2) {
       // Navigate to DeviceScanningScreen when "Add" is tapped
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => ScanScreen(
-                // onDeviceSelected: (BluetoothDevice) {},
-                )),
-      );
+      // Navigator.push(
+      //   context,
+      //   MaterialPageRoute(
+      //       builder: (context) => ScanScreen(
+      //             onDeviceSelected: (BluetoothDevice) {},
+      //           )),
+      // );
     } else {
       setState(() {
         _selectedIndex = index;
@@ -33,38 +34,38 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> {
   Widget build(BuildContext context) {
     return BottomNavigationBar(
       useLegacyColorScheme: false,
-      backgroundColor: Color(0xffEEF7FF),
+      backgroundColor: Colors.black,
       type: BottomNavigationBarType.fixed,
       currentIndex: _selectedIndex,
       onTap: _onItemTapped,
       items: [
-        BottomNavigationBarItem(
-          icon: Icon(IconlyBroken.home),
+        const BottomNavigationBarItem(
+          icon: const Icon(IconlyBroken.home),
           activeIcon: Icon(IconlyBold.home),
           label: 'Home',
         ),
-        BottomNavigationBarItem(
+        const BottomNavigationBarItem(
           icon: Icon(IconlyBroken.search),
           activeIcon: Icon(IconlyBold.search),
           label: 'Search',
         ),
-        BottomNavigationBarItem(
+        const BottomNavigationBarItem(
           icon: Icon(IconlyBroken.plus),
           activeIcon: Icon(IconlyBold.plus),
           label: 'Add',
         ),
-        BottomNavigationBarItem(
+        const BottomNavigationBarItem(
           icon: Icon(IconlyBroken.heart),
           activeIcon: Icon(IconlyBold.heart),
           label: 'Activity',
         ),
-        BottomNavigationBarItem(
+        const BottomNavigationBarItem(
           icon: Icon(IconlyBroken.profile),
           activeIcon: Icon(IconlyBold.profile),
           label: 'Profile',
         ),
       ],
-      selectedItemColor: Colors.black,
+      selectedItemColor: Colors.white,
       unselectedItemColor: Colors.grey,
       showSelectedLabels: false,
       showUnselectedLabels: false,

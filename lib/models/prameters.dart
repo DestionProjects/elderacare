@@ -18,12 +18,12 @@ class ParameterModel {
 
   factory ParameterModel.fromJson(Map<String, dynamic> json) {
     return ParameterModel(
-      heartRate: json['heartRate']?.toString() ?? 'N/A',
-      bloodOxygen: json['bloodOxygen']?.toString() ?? 'N/A',
-      stress: json['stress']?.toString() ?? 'N/A',
-      hrv: json['hrv']?.toString() ?? 'N/A',
-      bodyTemp: json['bodyTemp']?.toString() ?? 'N/A',
-      bloodPressure: json['bloodPressure']?.toString() ?? 'N/A',
+      heartRate: json['heartRate']?.toString() ?? 'Reading...',
+      bloodOxygen: json['bloodOxygen']?.toString() ?? 'Reading...',
+      stress: json['stress']?.toString() ?? 'Reading...',
+      hrv: json['hrv']?.toString() ?? 'Reading...',
+      bodyTemp: json['bodyTemp']?.toString() ?? 'Reading...',
+      bloodPressure: json['bloodPressure']?.toString() ?? 'Reading...',
     );
   }
 }

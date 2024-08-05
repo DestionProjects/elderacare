@@ -1,6 +1,6 @@
 // services/bluetooth_connection_service.dart
+import 'package:elderacare/features/measurements/services/measures.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'measurement_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 typedef OnMacAddressReceived = void Function(String macAddress);
@@ -13,77 +13,38 @@ class BluetoothConnectionService {
   OnMacAddressReceived? onMacAddressReceived;
   OnMeasurementUpdate? onMeasurementUpdate;
 
-  Future<void> saveDeviceId(String remoteId) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('remoteId', remoteId);
-  }
-
-  // Future<BluetoothDevice?> connectToSavedDevice() async {
-  //   print(
-  //       'Remote ID--------------------------------------------------------------------------: $remoteId');
-  //   // var device = BluetoothDevice.fromId(remoteId);
-  //   await device.connect(autoConnect: true, mtu: null);
-  //   return device;
-  // }
-
-  // // Call this method after a successful connection
-  // Future<void> onDeviceConnected(BluetoothDevice device) async {
-  //   await saveDeviceId(device.remoteId);
-  //   _startMeasurementService();
-  // }
   Future<bool> connectToDevice(BluetoothDevice device) async {
     try {
       await device.connect(autoConnect: true, mtu: null);
-      bool servicesDiscovered = await discoverServices(device);
-      if (servicesDiscovered) {
-        print("Services discovered, starting measurement service...");
-        return true;
-      } else {
-        print("Services not discovered.");
-        return false;
-      }
+      await discoverServices(device);
+      return true;
     } catch (e) {
       print("Failed to connect: $e");
       return false;
     }
   }
 
-  Future<bool> discoverServices(BluetoothDevice device) async {
-    try {
-      List<BluetoothService> services = await device.discoverServices();
-      print("Services discovered: ${services.length}");
-      for (var service in services) {
-        if (service.uuid == Guid('0000fff0-0000-1000-8000-00805f9b34fb')) {
-          for (var characteristic in service.characteristics) {
-            if (characteristic.uuid ==
-                Guid('0000fff6-0000-1000-8000-00805f9b34fb')) {
-              txCharacteristic = characteristic;
-              print("TX Characteristic found");
-            }
-            if (characteristic.uuid ==
-                Guid('0000fff7-0000-1000-8000-00805f9b34fb')) {
-              rxCharacteristic = characteristic;
-              print("RX Characteristic found, listening for MAC address...");
-              _listenForMacAddress();
-            }
+  Future<void> discoverServices(BluetoothDevice device) async {
+    List<BluetoothService> services = await device.discoverServices();
+    for (var service in services) {
+      if (service.uuid == Guid('0000fff0-0000-1000-8000-00805f9b34fb')) {
+        for (var characteristic in service.characteristics) {
+          if (characteristic.uuid ==
+              Guid('0000fff6-0000-1000-8000-00805f9b34fb')) {
+            txCharacteristic = characteristic;
+          }
+          if (characteristic.uuid ==
+              Guid('0000fff7-0000-1000-8000-00805f9b34fb')) {
+            rxCharacteristic = characteristic;
+            _listenForMacAddress();
           }
         }
       }
-
-      // Ensure both characteristics are discovered before starting the measurement service
-      if (txCharacteristic != null && rxCharacteristic != null) {
-        _startMeasurementService();
-        return true;
-      } else {
-        print("Required characteristics not found.");
-        return false;
-      }
-    } catch (e) {
-      print("Error discovering services: $e");
-      return false;
+    }
+    if (txCharacteristic != null && rxCharacteristic != null) {
+      _startMeasurementService();
     }
   }
-
 
   void sendCommandToGetMacAddress() async {
     if (txCharacteristic != null) {

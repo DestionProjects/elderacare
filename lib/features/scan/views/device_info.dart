@@ -1,12 +1,12 @@
 import 'dart:async';
+
+import 'package:elderacare/utils/extra.dart';
+import 'package:elderacare/utils/snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-
 import '../widgets/service_tile.dart';
 import '../widgets/characteristic_tile.dart';
 import '../widgets/descriptor_tile.dart';
-import '../utils/snackbar.dart';
-import '../utils/extra.dart';
 
 class DeviceScreen extends StatefulWidget {
   final BluetoothDevice device;
@@ -87,7 +87,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
     return _connectionState == BluetoothConnectionState.connected;
   }
 
-  Future<void> onConnectPressed() async {
+  Future onConnectPressed() async {
     try {
       await widget.device.connectAndUpdateStream();
       Snackbar.show(ABC.c, "Connect: Success", success: true);
@@ -102,7 +102,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
     }
   }
 
-  Future<void> onCancelPressed() async {
+  Future onCancelPressed() async {
     try {
       await widget.device.disconnectAndUpdateStream(queue: false);
       Snackbar.show(ABC.c, "Cancel: Success", success: true);
@@ -111,7 +111,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
     }
   }
 
-  Future<void> onDisconnectPressed() async {
+  Future onDisconnectPressed() async {
     try {
       await widget.device.disconnectAndUpdateStream();
       Snackbar.show(ABC.c, "Disconnect: Success", success: true);
@@ -121,7 +121,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
     }
   }
 
-  Future<void> onDiscoverServicesPressed() async {
+  Future onDiscoverServicesPressed() async {
     if (mounted) {
       setState(() {
         _isDiscoveringServices = true;
@@ -141,7 +141,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
     }
   }
 
-  Future<void> onRequestMtuPressed() async {
+  Future onRequestMtuPressed() async {
     try {
       await widget.device.requestMtu(223, predelay: 0);
       Snackbar.show(ABC.c, "Request Mtu: Success", success: true);
@@ -151,20 +151,16 @@ class _DeviceScreenState extends State<DeviceScreen> {
     }
   }
 
-  Future<void> onForgetDevicePressed() async {
-    await onDisconnectPressed();
-    // Additional logic to forget the device can be added here
-    Snackbar.show(ABC.c, "Device Disconnected", success: true);
-  }
-
   List<Widget> _buildServiceTiles(BuildContext context, BluetoothDevice d) {
     return _services
-        .map((s) => ServiceTile(
-              service: s,
-              characteristicTiles: s.characteristics
-                  .map((c) => _buildCharacteristicTile(c))
-                  .toList(),
-            ))
+        .map(
+          (s) => ServiceTile(
+            service: s,
+            characteristicTiles: s.characteristics
+                .map((c) => _buildCharacteristicTile(c))
+                .toList(),
+          ),
+        )
         .toList();
   }
 
@@ -233,20 +229,18 @@ class _DeviceScreenState extends State<DeviceScreen> {
 
   Widget buildMtuTile(BuildContext context) {
     return ListTile(
-      title: const Text('MTU Size'),
-      subtitle: Text('$_mtuSize bytes'),
-      trailing: IconButton(
-        icon: const Icon(Icons.edit),
-        onPressed: onRequestMtuPressed,
-      ),
-    );
+        title: const Text('MTU Size'),
+        subtitle: Text('$_mtuSize bytes'),
+        trailing: IconButton(
+          icon: const Icon(Icons.edit),
+          onPressed: onRequestMtuPressed,
+        ));
   }
 
   Widget buildConnectButton(BuildContext context) {
-    return Row(
-      children: [
-        if (_isConnecting || _isDisconnecting) buildSpinner(context),
-        TextButton(
+    return Row(children: [
+      if (_isConnecting || _isDisconnecting) buildSpinner(context),
+      TextButton(
           onPressed: _isConnecting
               ? onCancelPressed
               : (isConnected ? onDisconnectPressed : onConnectPressed),
@@ -256,10 +250,8 @@ class _DeviceScreenState extends State<DeviceScreen> {
                 .primaryTextTheme
                 .labelLarge
                 ?.copyWith(color: Colors.white),
-          ),
-        ),
-      ],
-    );
+          ))
+    ]);
   }
 
   @override
@@ -268,12 +260,6 @@ class _DeviceScreenState extends State<DeviceScreen> {
       key: Snackbar.snackBarKeyC,
       child: Scaffold(
         appBar: AppBar(
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back),
-            onPressed: () {
-              Navigator.of(context).pop(); // Navigate back
-            },
-          ),
           title: Text(widget.device.platformName),
           actions: [buildConnectButton(context)],
         ),
@@ -289,13 +275,6 @@ class _DeviceScreenState extends State<DeviceScreen> {
               ),
               buildMtuTile(context),
               ..._buildServiceTiles(context, widget.device),
-              TextButton(
-                onPressed: onForgetDevicePressed,
-                child: Text(
-                  "Forget Device",
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
             ],
           ),
         ),
