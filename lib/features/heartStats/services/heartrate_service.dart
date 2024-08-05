@@ -14,10 +14,10 @@ class ApiService {
       throw Exception("MAC address not found in shared preferences");
     }
 
-    final response = await http.get(
+    final response = await http.post(
       Uri.parse('$baseUrl/heart_rate'),
-      headers: {'Content-Type': 'application/json', 'mac_address': macAddress},
-      //  jsonEncode({'mac_address': macAddress}),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'mac_address': macAddress}),
     );
     print(response.body);
 
