@@ -38,14 +38,14 @@ class _DashboardState extends State<Dashboard> {
             fontSize: FontSizes.title,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(HugeIcons.strokeRoundedBluetoothSearch),
-            onPressed: () {
-              Get.to(() => ScanScreen()); // Navigate to ScanScreen
-            },
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     icon: Icon(HugeIcons.strokeRoundedBluetoothSearch),
+        //     onPressed: () {
+        //       Get.to(() => ScanScreen()); // Navigate to ScanScreen
+        //     },
+        //   ),
+        // ],
       ),
       body: SafeArea(
         child: Column(
