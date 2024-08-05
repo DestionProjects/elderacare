@@ -1,17 +1,21 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 
+import 'package:elderacare/features/heartStats/controller/heartrate_controller.dart';
 import 'package:elderacare/features/home/widgets/points_indicator.dart';
 import 'package:elderacare/utils/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class ProfilePointsCard extends StatelessWidget {
-  const ProfilePointsCard({super.key});
+  final HeartRateController heartRateController =
+      Get.put(HeartRateController());
+
+  ProfilePointsCard({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      // Adjust the color to match your background
       child: Row(
         children: [
           Expanded(
@@ -54,14 +58,16 @@ class ProfilePointsCard extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    '95',
-                    style: TextStyle(
-                      color: AppColors.purple,
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  Obx(() {
+                    return Text(
+                      '${heartRateController.heartRateResponse.value.heartRate}',
+                      style: TextStyle(
+                        color: AppColors.purple,
+                        fontSize: 40,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    );
+                  }),
                   SizedBox(width: 16),
                   Expanded(
                     child: Column(
@@ -74,8 +80,8 @@ class ProfilePointsCard extends StatelessWidget {
                               fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         Text(
-                          maxLines: 2,
                           'Your predicted heart rate value',
+                          maxLines: 2,
                           style: TextStyle(
                               fontSize: 12, fontWeight: FontWeight.w400),
                         ),
