@@ -7,12 +7,10 @@ class ScanResultTile extends StatefulWidget {
     Key? key,
     required this.result,
     this.onTap,
-    this.onDeviceConnected,
   }) : super(key: key);
 
   final ScanResult result;
   final VoidCallback? onTap;
-  final VoidCallback? onDeviceConnected;
 
   @override
   State<ScanResultTile> createState() => _ScanResultTileState();
@@ -31,18 +29,6 @@ class _ScanResultTileState extends State<ScanResultTile> {
         widget.result.device.connectionState.listen((state) {
       setState(() {
         _connectionState = state;
-        print('Connection State: $_connectionState'); // Debug print
-
-        if (_isConnected && widget.onDeviceConnected != null) {
-          print(
-              'Device connected: ${widget.result.device.remoteId.str}'); // Debug print
-          widget.onDeviceConnected!();
-        }
-
-        if (!_isConnected) {
-          print(
-              'Device disconnected: ${widget.result.device.remoteId.str}'); // Debug print
-        }
       });
     });
   }
@@ -51,25 +37,6 @@ class _ScanResultTileState extends State<ScanResultTile> {
   void dispose() {
     _connectionStateSubscription.cancel();
     super.dispose();
-  }
-
-  String _formatHexArray(List<int> bytes) {
-    return '[${bytes.map((i) => i.toRadixString(16).padLeft(2, '0')).join(', ')}]';
-  }
-
-  String _formatManufacturerData(List<List<int>> data) {
-    return data.map((val) => _formatHexArray(val)).join(', ').toUpperCase();
-  }
-
-  String _formatServiceData(Map<Guid, List<int>> data) {
-    return data.entries
-        .map((v) => '${v.key}: ${_formatHexArray(v.value)}')
-        .join(', ')
-        .toUpperCase();
-  }
-
-  String _formatServiceUuids(List<Guid> serviceUuids) {
-    return serviceUuids.join(', ').toUpperCase();
   }
 
   bool get _isConnected =>
@@ -81,17 +48,9 @@ class _ScanResultTileState extends State<ScanResultTile> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (device.platformName.isNotEmpty) ...[
-          Text(
-            device.platformName,
-            overflow: TextOverflow.ellipsis,
-          ),
-          Text(
-            device.remoteId.str,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ] else
-          Text(device.remoteId.str),
+        Text(device.name.isNotEmpty ? device.name : device.id.toString()),
+        Text(device.id.toString(),
+            style: Theme.of(context).textTheme.bodySmall),
       ],
     );
   }
@@ -105,6 +64,34 @@ class _ScanResultTileState extends State<ScanResultTile> {
       ),
       onPressed:
           widget.result.advertisementData.connectable ? widget.onTap : null,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final adv = widget.result.advertisementData;
+    return ExpansionTile(
+      title: _buildTitle(context),
+      leading: Text(widget.result.rssi.toString()),
+      trailing: _buildConnectButton(context),
+      children: [
+        if (adv.localName.isNotEmpty)
+          _buildAdvRow(context, 'Name', adv.localName),
+        if (adv.txPowerLevel != null)
+          _buildAdvRow(context, 'Tx Power Level', '${adv.txPowerLevel}'),
+        if ((adv.appearance ?? 0) > 0)
+          _buildAdvRow(
+              context, 'Appearance', '0x${adv.appearance!.toRadixString(16)}'),
+        if (adv.manufacturerData.isNotEmpty)
+          _buildAdvRow(context, 'Manufacturer Data',
+              _formatHexArray(adv.manufacturerData)),
+        if (adv.serviceUuids.isNotEmpty)
+          _buildAdvRow(
+              context, 'Service UUIDs', _formatServiceUuids(adv.serviceUuids)),
+        if (adv.serviceData.isNotEmpty)
+          _buildAdvRow(
+              context, 'Service Data', _formatServiceData(adv.serviceData)),
+      ],
     );
   }
 
@@ -131,30 +118,23 @@ class _ScanResultTileState extends State<ScanResultTile> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final adv = widget.result.advertisementData;
-    return ExpansionTile(
-      title: _buildTitle(context),
-      leading: Text(widget.result.rssi.toString()),
-      trailing: _buildConnectButton(context),
-      children: [
-        if (adv.advName.isNotEmpty) _buildAdvRow(context, 'Name', adv.advName),
-        if (adv.txPowerLevel != null)
-          _buildAdvRow(context, 'Tx Power Level', '${adv.txPowerLevel}'),
-        if ((adv.appearance ?? 0) > 0)
-          _buildAdvRow(
-              context, 'Appearance', '0x${adv.appearance!.toRadixString(16)}'),
-        if (adv.msd.isNotEmpty)
-          _buildAdvRow(
-              context, 'Manufacturer Data', _formatManufacturerData(adv.msd)),
-        if (adv.serviceUuids.isNotEmpty)
-          _buildAdvRow(
-              context, 'Service UUIDs', _formatServiceUuids(adv.serviceUuids)),
-        if (adv.serviceData.isNotEmpty)
-          _buildAdvRow(
-              context, 'Service Data', _formatServiceData(adv.serviceData)),
-      ],
-    );
+  String _formatHexArray(Map<int, List<int>> bytes) {
+    return bytes.entries
+        .map((entry) => entry.value
+            .map((i) => i.toRadixString(16).padLeft(2, '0'))
+            .join(', '))
+        .join(', ')
+        .toUpperCase();
+  }
+
+  String _formatServiceData(Map<Guid, List<int>> data) {
+    return data.entries
+        .map((v) => '${v.key}: ${_formatHexArray({v.key.hashCode: v.value})}')
+        .join(', ')
+        .toUpperCase();
+  }
+
+  String _formatServiceUuids(List<Guid> serviceUuids) {
+    return serviceUuids.join(', ').toUpperCase();
   }
 }

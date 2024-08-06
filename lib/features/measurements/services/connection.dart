@@ -16,7 +16,8 @@ class BluetoothConnectionService {
   Future<bool> connectToDevice(BluetoothDevice device) async {
     try {
       await device.connect(autoConnect: true, mtu: null);
-      await discoverServices(device);
+      await _discoverServices(device);
+      _startMeasurementService(); // Start measurement service after discovering services
       return true;
     } catch (e) {
       print("Failed to connect: $e");
@@ -24,7 +25,7 @@ class BluetoothConnectionService {
     }
   }
 
-  Future<void> discoverServices(BluetoothDevice device) async {
+  Future<void> _discoverServices(BluetoothDevice device) async {
     List<BluetoothService> services = await device.discoverServices();
     for (var service in services) {
       if (service.uuid == Guid('0000fff0-0000-1000-8000-00805f9b34fb')) {
@@ -41,12 +42,9 @@ class BluetoothConnectionService {
         }
       }
     }
-    if (txCharacteristic != null && rxCharacteristic != null) {
-      _startMeasurementService();
-    }
   }
 
-  void sendCommandToGetMacAddress() async {
+  Future<void> sendCommandToGetMacAddress() async {
     if (txCharacteristic != null) {
       List<int> command = List.filled(16, 0);
       command[0] = 0x22; // Command to get MAC address
@@ -73,6 +71,9 @@ class BluetoothConnectionService {
         if (onMacAddressReceived != null) {
           onMacAddressReceived!(macAddress);
         }
+
+        // Start measurement service once MAC address is received
+        _startMeasurementService();
       }
     });
     rxCharacteristic?.setNotifyValue(true);

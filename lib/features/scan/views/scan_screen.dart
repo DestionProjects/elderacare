@@ -15,6 +15,8 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import '../widgets/system_device_tile.dart';
 import 'package:lottie/lottie.dart';
 
+// screens/scan_screen.dart
+
 class ScanScreen extends StatefulWidget {
   const ScanScreen({Key? key}) : super(key: key);
 
@@ -34,16 +36,18 @@ class _ScanScreenState extends State<ScanScreen> {
   @override
   void initState() {
     super.initState();
+    _initializeBluetooth();
+  }
 
+  void _initializeBluetooth() {
     _scanResultsSubscription = FlutterBluePlus.scanResults.listen((results) {
       setState(() {
         _scanResults = results
-            .where(
-                (result) => result.device.advName.toLowerCase().startsWith('j'))
+            .where((result) => result.device.name.toLowerCase().startsWith('j'))
             .toList();
       });
     }, onError: (e) {
-      Snackbar.show(ABC.b, prettyException("Scan Error:", e), success: false);
+      Snackbar.show(ABC.a, "Scan Error: $e", success: false);
     });
 
     _isScanningSubscription = FlutterBluePlus.isScanning.listen((state) {
@@ -60,56 +64,45 @@ class _ScanScreenState extends State<ScanScreen> {
     super.dispose();
   }
 
-  Future<void> onScanPressed() async {
+  Future<void> _startScan() async {
     try {
-      _systemDevices = await FlutterBluePlus.systemDevices;
+      _systemDevices = await FlutterBluePlus.connectedDevices;
+      await FlutterBluePlus.startScan(timeout: const Duration(seconds: 15));
     } catch (e) {
-      Snackbar.show(ABC.b, prettyException("System Devices Error:", e),
-          success: false);
+      Snackbar.show(ABC.b, "Scan Error: $e", success: false);
     }
+  }
+
+  Future<void> _stopScan() async {
     try {
-      FlutterBluePlus.startScan(timeout: const Duration(seconds: 15));
+      await FlutterBluePlus.stopScan();
     } catch (e) {
-      Snackbar.show(ABC.c, prettyException("Start Scan Error:", e),
+      Snackbar.show(ABC.c, "Stop Scan Error: $e", success: false);
+    }
+  }
+
+  void _onDeviceSelected(BluetoothDevice device) async {
+    bool isConnected =
+        await _bluetoothConnectionService.connectToDevice(device);
+    if (isConnected) {
+      await _bluetoothConnectionService.sendCommandToGetMacAddress();
+      _bluetoothConnectionService.onMacAddressReceived = (macAddress) {
+        Snackbar.show(ABC.c, "MAC Address: $macAddress", success: true);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => Dashboard()), // Navigate to Dashboard
+        );
+      };
+    } else {
+      Snackbar.show(ABC.c, "Failed to connect to ${device.name}",
           success: false);
     }
   }
 
-  Future<void> onStopPressed() async {
-    try {
-      FlutterBluePlus.stopScan();
-    } catch (e) {
-      Snackbar.show(ABC.b, prettyException("Stop Scan Error:", e),
-          success: false);
-    }
-  }
-
-  void onConnectPressed(BluetoothDevice device) {
-    _bluetoothConnectionService.connectToDevice(device).then((success) {
-      if (success) {
-        MaterialPageRoute route = MaterialPageRoute(
-            builder: (context) => DeviceScreen(device: device),
-            settings: RouteSettings(name: '/DeviceScreen'));
-        Navigator.of(context).push(route);
-        _bluetoothConnectionService.sendCommandToGetMacAddress();
-        _bluetoothConnectionService.onMacAddressReceived = (macAddress) {
-          // _bluetoothConnectionService.saveDeviceId(macAddress);
-
-          Snackbar.show(ABC.b, "MAC Address: $macAddress", success: true);
-        };
-      } else {
-        Snackbar.show(ABC.c, "Failed to connect to ${device.name}",
-            success: false);
-      }
-    }).catchError((e) {
-      Snackbar.show(ABC.c, prettyException("Connect Error:", e),
-          success: false);
-    });
-  }
-
-  Future<void> onRefresh() {
+  Future<void> _refreshDevices() async {
     if (!_isScanning) {
-      FlutterBluePlus.startScan(timeout: const Duration(seconds: 15));
+      await _startScan();
     }
     return Future.delayed(Duration(milliseconds: 500));
   }
@@ -117,7 +110,7 @@ class _ScanScreenState extends State<ScanScreen> {
   @override
   Widget build(BuildContext context) {
     return ScaffoldMessenger(
-      key: Snackbar.snackBarKeyB,
+      key: Snackbar.snackBarKeyA,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Find Devices'),
@@ -132,11 +125,10 @@ class _ScanScreenState extends State<ScanScreen> {
           ),
         ),
         body: RefreshIndicator(
-          onRefresh: onRefresh,
+          onRefresh: _refreshDevices,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              // ScanAnimation(isScanning: _isScanning),
               const SizedBox(height: 20),
               Text(
                 _isScanning ? 'Scanning for devices...' : 'Scan for devices',
@@ -157,16 +149,13 @@ class _ScanScreenState extends State<ScanScreen> {
                           onOpen: () => Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (context) => DeviceScreen(device: d),
-                              settings: RouteSettings(name: '/DeviceScreen'),
                             ),
                           ),
-                          onConnect: () => onConnectPressed(d),
+                          onConnect: () => _onDeviceSelected(d),
                         )),
                     ..._scanResults.map((r) => ScanResultTile(
-                          // bluetoothConnectionService:
-                          //     _bluetoothConnectionService,
                           result: r,
-                          onTap: () => onConnectPressed(r.device),
+                          onTap: () => _onDeviceSelected(r.device),
                         )),
                   ],
                 ),
@@ -176,7 +165,7 @@ class _ScanScreenState extends State<ScanScreen> {
         ),
         floatingActionButton: ScanButton(
           isScanning: _isScanning,
-          onPressed: _isScanning ? onStopPressed : onScanPressed,
+          onPressed: _isScanning ? _stopScan : _startScan,
         ),
       ),
     );
