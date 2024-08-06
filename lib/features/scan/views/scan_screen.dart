@@ -30,6 +30,7 @@ class _ScanScreenState extends State<ScanScreen> {
   List<BluetoothDevice> _systemDevices = [];
   List<ScanResult> _scanResults = [];
   bool _isScanning = false;
+  bool _isConnecting = false;
   late StreamSubscription<List<ScanResult>> _scanResultsSubscription;
   late StreamSubscription<bool> _isScanningSubscription;
 
@@ -37,6 +38,8 @@ class _ScanScreenState extends State<ScanScreen> {
   void initState() {
     super.initState();
     _initializeBluetooth();
+    // _bluetoothConnectionService.onConnectionProgress =
+    //     _handleConnectionProgress;
   }
 
   void _initializeBluetooth() {
@@ -54,6 +57,12 @@ class _ScanScreenState extends State<ScanScreen> {
       setState(() {
         _isScanning = state;
       });
+    });
+  }
+
+  void _handleConnectionProgress(bool inProgress) {
+    setState(() {
+      _isConnecting = inProgress;
     });
   }
 
@@ -85,8 +94,7 @@ class _ScanScreenState extends State<ScanScreen> {
     bool isConnected =
         await _bluetoothConnectionService.connectToDevice(device);
     if (isConnected) {
-      await _bluetoothConnectionService.sendCommandToGetMacAddress();
-      _bluetoothConnectionService.onMacAddressReceived = (macAddress) {
+      _bluetoothConnectionService.onMacAddressReceived = (macAddress) async {
         Snackbar.show(ABC.c, "MAC Address: $macAddress", success: true);
         Navigator.push(
           context,
@@ -112,56 +120,55 @@ class _ScanScreenState extends State<ScanScreen> {
     return ScaffoldMessenger(
       key: Snackbar.snackBarKeyA,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Find Devices'),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => Dashboard()),
-              );
-            },
-          ),
-        ),
-        body: RefreshIndicator(
-          onRefresh: _refreshDevices,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              const SizedBox(height: 20),
-              Text(
-                _isScanning ? 'Scanning for devices...' : 'Scan for devices',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        appBar: AppBar(title: const Text('Find Devices'), leading: SizedBox()),
+        body: Stack(
+          children: [
+            RefreshIndicator(
+              onRefresh: _refreshDevices,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  const SizedBox(height: 20),
+                  Text(
+                    _isScanning
+                        ? 'Scanning for devices...'
+                        : 'Scan for devices',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Make sure your Bluetooth is enabled',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 40),
+                  Expanded(
+                    child: ListView(
+                      children: <Widget>[
+                        ..._systemDevices.map((d) => SystemDeviceTile(
+                              device: d,
+                              onOpen: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => DeviceScreen(device: d),
+                                ),
+                              ),
+                              onConnect: () => _onDeviceSelected(d),
+                            )),
+                        ..._scanResults.map((r) => ScanResultTile(
+                              result: r,
+                              onTap: () => _onDeviceSelected(r.device),
+                            )),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 10),
-              Text(
-                'Make sure your Bluetooth is enabled',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+            if (_isConnecting)
+              Center(
+                child: CircularProgressIndicator(),
               ),
-              const SizedBox(height: 40),
-              Expanded(
-                child: ListView(
-                  children: <Widget>[
-                    ..._systemDevices.map((d) => SystemDeviceTile(
-                          device: d,
-                          onOpen: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => DeviceScreen(device: d),
-                            ),
-                          ),
-                          onConnect: () => _onDeviceSelected(d),
-                        )),
-                    ..._scanResults.map((r) => ScanResultTile(
-                          result: r,
-                          onTap: () => _onDeviceSelected(r.device),
-                        )),
-                  ],
-                ),
-              ),
-            ],
-          ),
+          ],
         ),
         floatingActionButton: ScanButton(
           isScanning: _isScanning,

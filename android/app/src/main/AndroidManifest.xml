@@ -5,6 +5,7 @@
 <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
 <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 <uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>
 
 
@@ -12,6 +13,13 @@
         android:label="elderacare"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+                <!-- Add the service declaration -->
+        <service android:name=".MeasurementService"
+            android:foregroundServiceType="location" />
+        <service
+        android:name=".BluetoothService"
+        android:enabled="true"
+        android:exported="true" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

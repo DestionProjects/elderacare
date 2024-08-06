@@ -10,8 +10,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
-
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'screens/bluetooth_off_screen.dart';
+import 'dart:isolate'; // Import the dart:isolate library
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +24,31 @@ void main() async {
   // Check for MAC address in SharedPreferences
   final prefs = await SharedPreferences.getInstance();
   final macAddress = prefs.getString('mac_address');
+
+  // Initialize foreground task
+  FlutterForegroundTask.init(
+    androidNotificationOptions: AndroidNotificationOptions(
+      channelId: 'MeasurementServiceChannel',
+      channelName: 'Measurement Service Channel',
+      channelDescription:
+          'This notification appears when the measurement service is running.',
+      channelImportance: NotificationChannelImportance.DEFAULT,
+      priority: NotificationPriority.DEFAULT,
+      iconData: NotificationIconData(
+        resType: ResourceType.mipmap,
+        resPrefix: ResourcePrefix.ic,
+        name: 'launcher',
+      ),
+    ),
+    iosNotificationOptions: IOSNotificationOptions(
+      showNotification: true,
+      playSound: false,
+    ),
+    foregroundTaskOptions: ForegroundTaskOptions(
+      interval: 5000,
+      isOnceEvent: false,
+    ),
+  );
 
   runApp(FlutterBlueApp(
       initialScreen: macAddress != null ? Dashboard() : ScanScreen()));
@@ -41,6 +67,7 @@ class FlutterBlueApp extends StatelessWidget {
       title: 'Flutter Blue',
       color: Colors.lightBlue,
       home: initialScreen,
+      navigatorObservers: [BluetoothAdapterStateObserver()],
     );
   }
 }
@@ -69,5 +96,41 @@ class BluetoothAdapterStateObserver extends NavigatorObserver {
     // Cancel the subscription when the route is popped
     _adapterStateSubscription?.cancel();
     _adapterStateSubscription = null;
+  }
+}
+
+void startForegroundService() {
+  FlutterForegroundTask.startService(
+    notificationTitle: 'Measurement Service',
+    notificationText: 'Running measurement service...',
+  );
+
+  FlutterForegroundTask.setTaskHandler(MeasurementTaskHandler());
+}
+
+class MeasurementTaskHandler extends TaskHandler {
+  @override
+  Future<void> onStart(DateTime timestamp, SendPort? sendPort) async {
+    // Initialize and start measurement service
+  }
+
+  @override
+  Future<void> onEvent(DateTime timestamp, SendPort? sendPort) async {
+    // Handle periodic events
+  }
+
+  @override
+  Future<void> onDestroy(DateTime timestamp, SendPort? sendPort) async {
+    // Clean up resources
+  }
+
+  @override
+  void onButtonPressed(String id) {
+    // Handle button pressed
+  }
+
+  @override
+  void onNotificationPressed() {
+    // Handle notification pressed
   }
 }

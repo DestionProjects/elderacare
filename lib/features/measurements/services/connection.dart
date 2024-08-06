@@ -6,21 +6,27 @@ import 'package:shared_preferences/shared_preferences.dart';
 typedef OnMacAddressReceived = void Function(String macAddress);
 typedef OnMeasurementUpdate = void Function(Map<String, dynamic>);
 
+typedef OnConnectionProgress = void Function(bool inProgress);
+
 class BluetoothConnectionService {
   BluetoothCharacteristic? txCharacteristic;
   BluetoothCharacteristic? rxCharacteristic;
 
   OnMacAddressReceived? onMacAddressReceived;
   OnMeasurementUpdate? onMeasurementUpdate;
+  OnConnectionProgress? onConnectionProgress;
 
   Future<bool> connectToDevice(BluetoothDevice device) async {
     try {
       await device.connect(autoConnect: true, mtu: null);
       await _discoverServices(device);
-      _startMeasurementService(); // Start measurement service after discovering services
+      onConnectionProgress
+          ?.call(true); // Indicate that MAC address detection is in progress
+      await sendCommandToGetMacAddress();
       return true;
     } catch (e) {
       print("Failed to connect: $e");
+      onConnectionProgress?.call(false); // Ensure progress indicator is stopped
       return false;
     }
   }
@@ -53,6 +59,7 @@ class BluetoothConnectionService {
       print("Sent command to get MAC address");
     } else {
       print("TX Characteristic not found.");
+      onConnectionProgress?.call(false); // Ensure progress indicator is stopped
     }
   }
 
@@ -73,7 +80,9 @@ class BluetoothConnectionService {
         }
 
         // Start measurement service once MAC address is received
-        _startMeasurementService();
+        await _startMeasurementService();
+        onConnectionProgress
+            ?.call(false); // Indicate that MAC address detection is completed
       }
     });
     rxCharacteristic?.setNotifyValue(true);
